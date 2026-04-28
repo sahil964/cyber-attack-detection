@@ -1,11 +1,13 @@
 from flask import Flask, render_template, request, redirect, url_for, session
 import sqlite3
 from werkzeug.security import generate_password_hash, check_password_hash
+import os
 
 app = Flask(__name__)
 app.secret_key = "secret123"
 
-# ---------- DATABASE ----------
+# ----------- DATABASE -----------
+
 def get_db():
     return sqlite3.connect("users.db")
 
@@ -25,7 +27,8 @@ def init_db():
 
 init_db()
 
-# ---------- FUNCTIONS ----------
+# ----------- FUNCTIONS -----------
+
 def add_user(username, password):
     conn = get_db()
     cur = conn.cursor()
@@ -33,7 +36,10 @@ def add_user(username, password):
     hashed = generate_password_hash(password)
 
     try:
-        cur.execute("INSERT INTO users VALUES (?, ?)", (username, hashed))
+        cur.execute(
+            "INSERT INTO users (username, password) VALUES (?, ?)",
+            (username, hashed)
+        )
         conn.commit()
         conn.close()
         return True
@@ -45,7 +51,10 @@ def check_user(username, password):
     conn = get_db()
     cur = conn.cursor()
 
-    cur.execute("SELECT password FROM users WHERE username=?", (username,))
+    cur.execute(
+        "SELECT password FROM users WHERE username=?",
+        (username,)
+    )
     user = cur.fetchone()
 
     conn.close()
@@ -54,7 +63,7 @@ def check_user(username, password):
         return True
     return False
 
-# ---------- ROUTES ----------
+# ----------- ROUTES -----------
 
 # LOGIN
 @app.route('/', methods=['GET', 'POST'])
@@ -71,7 +80,6 @@ def login():
 
     return render_template('login.html')
 
-
 # SIGNUP
 @app.route('/signup', methods=['GET', 'POST'])
 def signup():
@@ -86,8 +94,7 @@ def signup():
 
     return render_template('signup.html')
 
-
-# HOME (DASHBOARD)
+# HOME
 @app.route('/home')
 def home():
     if 'user' not in session:
@@ -95,14 +102,13 @@ def home():
 
     return render_template("index.html")
 
-
 # LOGOUT
 @app.route('/logout')
 def logout():
     session.pop('user', None)
     return redirect(url_for('login'))
 
+# ----------- RUN -----------
 
-# RUN
-if __name__ == '__main__':
-    app.run(debug=True)
+if __name__ == "__main__":
+    app.run(host="0.0.0.0", port=int(os.environ.get("PORT", 10000)))
