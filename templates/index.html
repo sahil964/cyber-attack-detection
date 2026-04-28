@@ -1,0 +1,205 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Cyber Dashboard</title>
+
+    <style>
+        body {
+            margin: 0;
+            font-family: "Courier New", monospace;
+            background: #0a0f2c;
+            color: red;
+            text-align: center;
+        }
+
+        h1 {
+            margin-top: 20px;
+            text-shadow: 0 0 10px red;
+        }
+
+        .topbar {
+            text-align: right;
+            padding: 10px 20px;
+        }
+
+        a {
+            color: red;
+            text-decoration: none;
+        }
+
+        a:hover {
+            text-shadow: 0 0 5px red;
+        }
+
+        .container {
+            margin-top: 30px;
+        }
+
+        input {
+            display: block;
+            margin: 10px auto;
+            padding: 10px;
+            width: 250px;
+            background: #0a0f2c;
+            border: 1px solid red;
+            color: red;
+        }
+
+        button {
+            padding: 10px 20px;
+            background: #0a0f2c;
+            border: 1px solid red;
+            color: red;
+            cursor: pointer;
+        }
+
+        button:hover {
+            background: red;
+            color: black;
+        }
+
+        #loading {
+            display: none;
+            margin-top: 20px;
+        }
+
+        #terminal {
+            margin-top: 20px;
+            padding: 20px;
+            width: 60%;
+            margin-left: auto;
+            margin-right: auto;
+            background: black;
+            color: #00ff00;
+            border: 1px solid red;
+            text-align: left;
+            min-height: 150px;
+        }
+
+        canvas {
+            margin-top: 30px;
+            background: white;
+            border-radius: 10px;
+        }
+    </style>
+</head>
+
+<body>
+
+<!-- 🔓 LOGOUT -->
+<div class="topbar">
+    <a href="/logout">Logout</a>
+</div>
+
+<h1>⚡ CYBER ATTACK DETECTION ⚡</h1>
+
+<div class="container">
+
+    <form method="POST" onsubmit="showLoading()">
+        <input name="duration" placeholder="Duration" required>
+        <input name="src_bytes" placeholder="Source Bytes" required>
+        <input name="dst_bytes" placeholder="Destination Bytes" required>
+        <input name="count" placeholder="Count" required>
+        <input name="srv_count" placeholder="Service Count" required>
+
+        <button type="submit">▶ Run Scan</button>
+    </form>
+
+    <!-- 🔍 Loading -->
+    <div id="loading">
+        🔍 Scanning<span id="dots"></span>
+    </div>
+
+    <!-- 💻 Terminal -->
+    <div id="terminal"></div>
+
+    <!-- 📊 Graph -->
+    <canvas id="chart" width="400" height="200"></canvas>
+
+</div>
+
+<!-- Chart.js -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+<script>
+// Loading animation
+function showLoading() {
+    document.getElementById("loading").style.display = "block";
+
+    let dots = document.getElementById("dots");
+    let count = 0;
+
+    setInterval(() => {
+        count = (count + 1) % 4;
+        dots.innerHTML = ".".repeat(count);
+    }, 500);
+}
+
+// Terminal typing effect
+function typeEffect(lines, index = 0) {
+    let terminal = document.getElementById("terminal");
+
+    if (index < lines.length) {
+        let line = lines[index];
+        let i = 0;
+
+        let interval = setInterval(() => {
+            terminal.innerHTML += line.charAt(i);
+            i++;
+
+            if (i >= line.length) {
+                clearInterval(interval);
+                terminal.innerHTML += "<br>";
+                setTimeout(() => typeEffect(lines, index + 1), 500);
+            }
+        }, 30);
+    }
+}
+
+// Inject result from Flask
+{% if result %}
+let lines;
+
+if ("{{ result }}" === "Attack") {
+    lines = [
+        "> Initializing scan...",
+        "> Analyzing packets...",
+        "> Detecting threats...",
+        "> 🚨 INTRUSION DETECTED 🚨"
+    ];
+} else if ("{{ result }}" === "Normal") {
+    lines = [
+        "> Initializing scan...",
+        "> Analyzing packets...",
+        "> No threats found...",
+        "> ✅ SYSTEM SECURE"
+    ];
+} else {
+    lines = [
+        "> ERROR: Invalid input"
+    ];
+}
+
+setTimeout(() => {
+    typeEffect(lines);
+
+    // Draw graph
+    var ctx = document.getElementById('chart').getContext('2d');
+
+    new Chart(ctx, {
+        type: 'bar',
+        data: {
+            labels: ['Attack', 'Normal'],
+            datasets: [{
+                label: 'Detection Result',
+                data: [{{ attack }}, {{ normal }}]
+            }]
+        }
+    });
+
+}, 500);
+{% endif %}
+</script>
+
+</body>
+</html>
